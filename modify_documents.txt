@@ -1,0 +1,115 @@
+ 》》Write a Python program that does the following:
+1. Enter the content on the command line and save it to the "question" string
+2. Import the "API" package and pass the "question" string to the api.document_read() function
+3. In the string returned by the api.document_read() function in the previous step, match the characters from "'''" to the next "'''", then remove the first line of the matching characters, and write these characters into the code.py in the "document" folder in the current directory with UTF-8 encoding (if there is no code.py in the "document" folder in the current directory, then create code. py, if there is already code in the "document" folder in the current directory. py overrides code. PY)
+4. Run the code.py in the "document" folder in the current directory and save the output content of the program to the "document_read" string. If an error is reported in the code.py, the output "The program cannot run normally" and end the program, and if the code.py does not output content, it outputs "The content was not read" and ends the program
+5. Match the "--end----" character in the "document_read" string, if there is no match for "--end----", continue the next steps; If it matches "--end----", copy the "document_read" string to the "document_save" string, and then change the following steps to multi-threading at the same time, and pass each piece of content in the "document_save" string according to "--end----" as the content of the "document_read" string to each thread. And add the process number after the file name when saving the code.py in each subsequent step (the steps of the running code.py are also changed to the corresponding file name), add the process number in front of the output string, and end the operation of the program to end the corresponding thread. The interval between thread creation is 0.05 seconds, and the creation of threads is suspended when the number of threads running at the same time reaches 64.
+6. Pass the "document_read" string and the "question" string into the api.document_modify() function (in the order of api.document_modify(document_read, question))
+7. In the string returned by the api.document_modify() function in the previous step, match the characters from "'''" to the next "'''", then remove the first line of the matching characters, and write these characters into the code.py in the "document" folder in the current directory with UTF-8 encoding (if there is no code.py in the "document" folder in the current directory, then create code. py, if there is already code in the "document" folder in the current directory. py overrides code. PY)
+8. Run the code.py in the "document" folder in the current directory, if the code.py error is reported, the output "The program cannot run normally" and end the program, and if the code.py is running normally, output "File processing completed" and end the program
+》
+```python
+import sys
+import re
+import os
+import subprocess
+import threading
+import time
+
+def read_input():
+    return input("Please enter your content: ")
+
+def extract_code(text):
+    pattern = r"```(.*?)```"
+    matches = re.findall(pattern, text, re.DOTALL)
+    if matches:
+        return "\n".join(matches[0].splitlines()[1:])
+    return None
+
+def write_code_to_file(code, filename):
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write(code)
+
+def run_code(filename):
+    try:
+        result = subprocess.run(['python', filename], capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError:
+        return "The program does not work properly"
+
+def process_document(question, api):
+    document_read = api.document_read(question)
+    code = extract_code(document_read)
+    if code:
+        write_code_to_file(code, 'document/code.py')
+        output = run_code('document/code.py')
+        if output == "The program does not work properly":
+            print(output)
+            return
+        if not output:
+            print("Content not read")
+            return
+        document_read = output
+    else:
+        print("Content not read")
+        return
+
+    if "--end----" in document_read:
+        document_save = document_read
+        segments = document_save.split("--end----")
+        threads = []
+        thread_count = 0
+
+        def thread_task(segment, thread_id):
+            document_read = segment
+            modified_document = api.document_modify(document_read, question)
+            code = extract_code(modified_document)
+            if code:
+                filename = f'document/code_{thread_id}.py'
+                write_code_to_file(code, filename)
+                output = run_code(filename)
+                if output == "The program does not work properly":
+                    print(f"Thread{thread_id}: The program is not functioning properly")
+                else:
+                    print(f"Thread{thread_id}: File processing complete")
+            else:
+                print(f"Thread{thread_id}: Content not read")
+
+        for segment in segments:
+            if thread_count >= 64:
+                for t in threads:
+                    t.join()
+                threads = []
+                thread_count = 0
+            thread = threading.Thread(target=thread_task, args=(segment, thread_count))
+            threads.append(thread)
+            thread.start()
+            thread_count += 1
+            time.sleep(0.05)
+
+        for t in threads:
+            t.join()
+    else:
+        modified_document = api.document_modify(document_read, question)
+        code = extract_code(modified_document)
+        if code:
+            write_code_to_file(code, 'document/code.py')
+            output = run_code('document/code.py')
+            if output == "The program does not work properly":
+                print(output)
+            else:
+                print("The file processing is complete")
+        else:
+            print("Content not read")
+
+def main():
+    if not os.path.exists('document'):
+        os.makedirs('document')
+
+    question = read_input()
+    import api
+    process_document(question, api)
+
+if __name__ == "__main__":
+    main()
+```

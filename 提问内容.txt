@@ -1,0 +1,39 @@
+》》写一个Python程序，实现以下功能
+1.用utf-8编码读取当前目录的book. txt文件，把文件内容保存到“content”字符串。
+2.在命令行输入内容，把输入的内容保存到“question”字符串。
+3.导入“api”包，把“content”字符串和“question”字符串传入api.question()函数（传入顺序为api. question(content, question)。
+4.输出api.question()函数返回的字符串
+5.重复第2到第4步
+
+》
+```python
+import api
+
+def main():
+    try:
+        with open('book.txt', 'r', encoding='utf-8') as file:
+            content = file.read()
+    except FileNotFoundError:
+        print("Error: 'book.txt' file not found in the current directory.")
+        return
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+        return
+
+    while True:
+        question = input("Please enter your question (or type 'exit' to quit): ")
+        if question.lower() == 'exit':
+            break
+
+        try:
+            response = api.question(content, question)
+            print(response)
+        except Exception as e:
+            print(f"An error occurred while processing the question: {e}")
+
+if __name__ == "__main__":
+    main()
+```
+
+请确保在运行此程序之前，当前目录下存在 `book.txt` 文件，并且 `api` 包中有一个名为 `question` 的函数。如果需要退出程序，可以在命令行输入 `exit`。
+

@@ -1,0 +1,39 @@
+》》Write a Python program that does the following:
+1. Use UTF-8 encoding to read the book of the current directory. txt file, save the contents of the file to the "content" string.
+2. Enter the content on the command line and save the input content to the "question" string.
+3. Import the "API" package, pass the "content" string and the "question" string to the api.question() function (the order of passing is api. question(content, question)。
+4. Output the string returned by the api.question() function
+5. Repeat steps 2 to 4
+
+》
+```python
+import api
+
+def main():
+    try:
+        with open('book.txt', 'r', encoding='utf-8') as file:
+            content = file.read()
+    except FileNotFoundError:
+        print("Error: 'book.txt' file not found in the current directory.")
+        return
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+        return
+
+    while True:
+        question = input("Please enter your question (or type 'exit' to quit): ")
+        if question.lower() == 'exit':
+            break
+
+        try:
+            response = api.question(content, question)
+            print(response)
+        except Exception as e:
+            print(f"An error occurred while processing the question: {e}")
+
+if __name__ == "__main__":
+    main()
+```
+
+Make sure that the 'book.txt' file exists in the current directory before you run this program, and that there is a function called 'question' in the 'api' package. If you need to exit the program, you can type 'exit' on the command line.
+
